@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "orbitvigil"
+version = "1.0.0"
+authors = [
+  { name="Scempyyy" },
+]
+description = "Real-time website health, uptime, SSL expiration, and broken link monitor."
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Internet :: WWW/HTTP :: Site Management",
+    "Topic :: System :: Monitoring",
+]
+
+[project.scripts]
+orbitvigil = "orbitvigil.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["orbitvigil*"]

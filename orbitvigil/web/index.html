@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OrbitVigil — Website Health & Uptime Monitor</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Plus Jakarta Sans', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            surface: {
+              800: '#141c2e',
+              900: '#0c1322',
+              950: '#070b14',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background: radial-gradient(circle at 50% 0%, #0d1e38 0%, #070b14 75%);
+      min-height: 100vh;
+    }
+    .glass-card {
+      background: rgba(20, 28, 46, 0.7);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="text-slate-100 font-sans antialiased selection:bg-cyan-500 selection:text-slate-950 min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="border-b border-slate-800 bg-surface-950/70 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 text-slate-950 font-black text-lg">
+          🛰️
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-extrabold text-xl tracking-tight text-white">Orbit<span class="text-cyan-400">Vigil</span></span>
+            <span class="text-[11px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">v1.0</span>
+          </div>
+          <p class="text-xs text-slate-400">Uptime, SSL Expiry & Broken Link Intelligence</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button onclick="downloadReport()" class="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition shadow-lg shadow-cyan-500/20 flex items-center gap-2">
+          <span>Export Audit</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-6 py-8 flex-1 space-y-8 w-full">
+    
+    <!-- Probe Control Box -->
+    <div class="glass-card rounded-2xl p-6 shadow-2xl relative overflow-hidden">
+      <div class="space-y-3">
+        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400">Target Website Domain or URL</label>
+        <div class="flex flex-col sm:flex-row items-center gap-3">
+          <div class="relative flex-1 w-full">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
+            </span>
+            <input id="targetUrl" type="text" placeholder="https://example.com" value="https://github.com" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl pl-10 pr-4 py-3 text-sm font-mono text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition">
+          </div>
+          
+          <label class="flex items-center gap-2 text-xs text-slate-300 font-semibold cursor-pointer shrink-0 bg-slate-900/60 px-4 py-3 rounded-xl border border-slate-800">
+            <input type="checkbox" id="crawlLinksCheck" class="rounded border-slate-700 text-cyan-500 focus:ring-0">
+            <span>Scan Broken Links</span>
+          </label>
+
+          <button onclick="runAudit()" id="auditBtn" class="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-slate-950 font-bold text-sm hover:opacity-95 transition shadow-lg shadow-cyan-500/25 flex items-center justify-center gap-2 shrink-0">
+            <span>Probe Health</span>
+            <span class="text-xs">➔</span>
+          </button>
+        </div>
+
+        <div class="flex items-center gap-2 text-xs text-slate-400 pt-1">
+          <span>Quick presets:</span>
+          <button onclick="setDomain('https://github.com')" class="hover:text-cyan-400 font-mono underline">GitHub</button>
+          <span>•</span>
+          <button onclick="setDomain('https://cloudflare.com')" class="hover:text-cyan-400 font-mono underline">Cloudflare</button>
+          <span>•</span>
+          <button onclick="setDomain('https://wikipedia.org')" class="hover:text-cyan-400 font-mono underline">Wikipedia</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Health Overview Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div class="glass-card rounded-xl p-5 border-l-4 border-l-cyan-500">
+        <div class="text-xs font-medium text-slate-400">Uptime Status</div>
+        <div id="statUptime" class="text-2xl font-bold font-mono text-cyan-400 mt-1">ONLINE</div>
+        <div id="statHttpCode" class="text-[11px] text-slate-500 mt-1">HTTP 200 OK</div>
+      </div>
+      <div class="glass-card rounded-xl p-5 border-l-4 border-l-emerald-500">
+        <div class="text-xs font-medium text-slate-400">Response Latency</div>
+        <div id="statLatency" class="text-2xl font-bold font-mono text-emerald-400 mt-1">-- ms</div>
+        <div class="text-[11px] text-slate-500 mt-1">Time to first byte</div>
+      </div>
+      <div class="glass-card rounded-xl p-5 border-l-4 border-l-blue-500">
+        <div class="text-xs font-medium text-slate-400">SSL Certificate</div>
+        <div id="statSsl" class="text-2xl font-bold font-mono text-blue-400 mt-1">-- Days</div>
+        <div id="statSslIssuer" class="text-[11px] text-slate-500 mt-1 truncate">Valid certificate</div>
+      </div>
+      <div class="glass-card rounded-xl p-5 border-l-4 border-l-purple-500">
+        <div class="text-xs font-medium text-slate-400">Security Score</div>
+        <div id="statSecurityScore" class="text-2xl font-bold font-mono text-purple-400 mt-1">-- / 4</div>
+        <div class="text-[11px] text-slate-500 mt-1">Standard HTTP headers</div>
+      </div>
+    </div>
+
+    <!-- Detailed Inspection Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      
+      <!-- SSL Certificate Deep-Dive -->
+      <div class="glass-card rounded-2xl p-6 space-y-4 shadow-xl">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">🔒</span>
+            <h3 class="font-bold text-white text-sm">SSL / TLS Certificate Health</h3>
+          </div>
+          <span id="sslBadge" class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-400">READY</span>
+        </div>
+
+        <div class="space-y-3 font-mono text-xs">
+          <div class="flex justify-between p-2.5 rounded-lg bg-slate-900/70 border border-slate-800">
+            <span class="text-slate-400">Days Remaining</span>
+            <span id="sslDaysVal" class="text-cyan-400 font-bold">--</span>
+          </div>
+          <div class="flex justify-between p-2.5 rounded-lg bg-slate-900/70 border border-slate-800">
+            <span class="text-slate-400">Expiration Timestamp</span>
+            <span id="sslExpiryVal" class="text-slate-200">--</span>
+          </div>
+          <div class="flex justify-between p-2.5 rounded-lg bg-slate-900/70 border border-slate-800">
+            <span class="text-slate-400">Certificate Authority</span>
+            <span id="sslIssuerVal" class="text-slate-200 truncate max-w-[200px]">--</span>
+          </div>
+          <div class="flex justify-between p-2.5 rounded-lg bg-slate-900/70 border border-slate-800">
+            <span class="text-slate-400">Common Name (CN)</span>
+            <span id="sslCnVal" class="text-slate-200 truncate max-w-[200px]">--</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Security Headers Audit -->
+      <div class="glass-card rounded-2xl p-6 space-y-4 shadow-xl">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">🛡️</span>
+            <h3 class="font-bold text-white text-sm">HTTP Security Headers</h3>
+          </div>
+          <span class="text-xs text-slate-400">OWASP Best Practices</span>
+        </div>
+
+        <div id="headersContainer" class="space-y-2">
+          <!-- Security header cards -->
+          <div class="text-xs text-slate-500 py-6 text-center">Run probe to analyze security headers</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Broken Links Section -->
+    <div class="glass-card rounded-2xl p-6 shadow-xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2">
+          <span class="text-lg">🔗</span>
+          <h3 class="font-bold text-white text-sm">Hyperlink Health & 404 Crawler</h3>
+        </div>
+        <span id="linkCountBadge" class="text-xs font-mono text-slate-400">0 Links Checked</span>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left font-mono text-xs">
+          <thead>
+            <tr class="text-slate-400 border-b border-slate-800">
+              <th class="py-2 px-3">Status</th>
+              <th class="py-2 px-3">HTTP Code</th>
+              <th class="py-2 px-3">Discovered Hyperlink</th>
+            </tr>
+          </thead>
+          <tbody id="linksTableBody" class="divide-y divide-slate-800/80">
+            <tr><td colspan="3" class="text-slate-500 py-6 text-center">Enable "Scan Broken Links" and probe to inspect links</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="border-t border-slate-900 py-6 text-center text-xs text-slate-500 font-mono">
+    OrbitVigil • Autonomous Site Reliability Monitor • Open Source
+  </footer>
+
+  <script>
+    let lastAuditData = null;
+
+    function setDomain(url) {
+      document.getElementById('targetUrl').value = url;
+    }
+
+    async function runAudit() {
+      const url = document.getElementById('targetUrl').value.trim();
+      const crawl = document.getElementById('crawlLinksCheck').checked;
+      if (!url) return;
+
+      const btn = document.getElementById('auditBtn');
+      btn.disabled = true;
+      btn.innerHTML = `<span class="animate-spin inline-block mr-1">⚙️</span> Probing...`;
+
+      try {
+        const res = await fetch('/api/check', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: url, crawl_links: crawl })
+        });
+        const data = await res.json();
+        lastAuditData = data;
+        renderHealthData(data);
+      } catch (e) {
+        alert("Health check failed: " + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<span>Probe Health</span> <span class="text-xs">➔</span>`;
+      }
+    }
+
+    function renderHealthData(data) {
+      // 1. Uptime stats
+      const uptimeElem = document.getElementById('statUptime');
+      const httpCodeElem = document.getElementById('statHttpCode');
+      const latencyElem = document.getElementById('statLatency');
+
+      if (data.is_up) {
+        uptimeElem.innerText = 'ONLINE';
+        uptimeElem.className = 'text-2xl font-bold font-mono text-emerald-400 mt-1';
+      } else {
+        uptimeElem.innerText = 'OFFLINE';
+        uptimeElem.className = 'text-2xl font-bold font-mono text-rose-500 mt-1';
+      }
+
+      httpCodeElem.innerText = `HTTP ${data.status_code}`;
+      latencyElem.innerText = `${data.latency_ms} ms`;
+
+      // 2. SSL
+      if (data.ssl && data.ssl.valid) {
+        document.getElementById('statSsl').innerText = `${data.ssl.days_remaining} Days`;
+        document.getElementById('statSslIssuer').innerText = data.ssl.issuer || 'Valid SSL';
+        document.getElementById('sslBadge').innerText = data.ssl.status;
+        document.getElementById('sslBadge').className = 'text-xs font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+        document.getElementById('sslDaysVal').innerText = `${data.ssl.days_remaining} days`;
+        document.getElementById('sslExpiryVal').innerText = data.ssl.expires_at || '--';
+        document.getElementById('sslIssuerVal').innerText = data.ssl.issuer || '--';
+        document.getElementById('sslCnVal').innerText = data.ssl.common_name || '--';
+      } else {
+        document.getElementById('statSsl').innerText = 'NO SSL';
+        document.getElementById('statSslIssuer').innerText = data.ssl?.error || 'Unavailable';
+        document.getElementById('sslBadge').innerText = 'INSECURE';
+        document.getElementById('sslBadge').className = 'text-xs font-mono font-bold px-2 py-0.5 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30';
+      }
+
+      // 3. Security Headers
+      const secH = data.security_headers || {};
+      const container = document.getElementById('headersContainer');
+      container.innerHTML = '';
+      let passedCount = 0;
+
+      for (const [key, [label, exists]] of Object.entries(secH)) {
+        if (exists) passedCount++;
+        const badge = exists ?
+          `<span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-bold">PASS</span>` :
+          `<span class="px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/30 font-bold">MISSING</span>`;
+        
+        const div = document.createElement('div');
+        div.className = 'flex items-center justify-between p-3 rounded-lg bg-slate-900/70 border border-slate-800 text-xs font-mono';
+        div.innerHTML = `
+          <span class="text-slate-300">${label}</span>
+          ${badge}
+        `;
+        container.appendChild(div);
+      }
+      document.getElementById('statSecurityScore').innerText = `${passedCount} / 4`;
+
+      // 4. Links
+      const links = data.links || [];
+      document.getElementById('linkCountBadge').innerText = `${links.length} Links Probed`;
+      const tBody = document.getElementById('linksTableBody');
+      tBody.innerHTML = '';
+
+      if (links.length === 0) {
+        tBody.innerHTML = `<tr><td colspan="3" class="text-slate-500 py-6 text-center">No links analyzed. Enable checkbox and probe again.</td></tr>`;
+      } else {
+        links.forEach(l => {
+          const badge = l.ok ?
+            `<span class="text-emerald-400 font-bold">HEALTHY</span>` :
+            `<span class="text-rose-400 font-bold">DEAD / 404</span>`;
+          const tr = document.createElement('tr');
+          tr.className = 'hover:bg-slate-900/50 transition';
+          tr.innerHTML = `
+            <td class="py-2.5 px-3">${badge}</td>
+            <td class="py-2.5 px-3 text-slate-300 font-bold">${l.status_code || 'Error'}</td>
+            <td class="py-2.5 px-3 text-slate-300 truncate max-w-md"><a href="${l.link}" target="_blank" class="hover:text-cyan-400 underline">${l.link}</a></td>
+          `;
+          tBody.appendChild(tr);
+        });
+      }
+    }
+
+    function downloadReport() {
+      if (!lastAuditData) {
+        alert("Please run an audit probe first.");
+        return;
+      }
+      const blob = new Blob([JSON.stringify(lastAuditData, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `OrbitVigil-Report-${Date.now()}.json`;
+      a.click();
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      runAudit();
+    });
+  </script>
+</body>
+</html>
